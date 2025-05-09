@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  AWS_REGION: 'us-east-2'  # Como string para evitar problemas
+  AWS_REGION: 'us-east-2'
   ECR_REPOSITORY: 'lacrei-node-api'
   CONTAINER_NAME: 'lacrei-node-api'
 
@@ -62,8 +62,6 @@ jobs:
   build-and-push-ecr:
     needs: security-scan
     runs-on: ubuntu-latest
-    env:
-      DOCKER_IMAGE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
     steps:
     - uses: actions/checkout@v3
     
@@ -72,7 +70,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-2  # Valor fixo aqui
+        aws-region: us-east-2
     
     - name: Login to Amazon ECR
       id: login-ecr
@@ -80,19 +78,17 @@ jobs:
     
     - name: Build, tag, and push image to Amazon ECR
       run: |
+        DOCKER_IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com/lacrei-node-api:latest
         docker build -t $DOCKER_IMAGE .
         docker push $DOCKER_IMAGE
-
-    - name: Update task definition with new image
-      run: |
+        
+        # Atualiza o arquivo task-definition.json
         sed -i 's|"image": ".*"|"image": "'"$DOCKER_IMAGE"'"|' task-definition.json
         cat task-definition.json
 
   deploy-ecs:
     needs: build-and-push-ecr
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: us-east-2  # Redefinindo no job para garantir
     steps:
     - uses: actions/checkout@v3
     
@@ -101,7 +97,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-2  # Valor fixo
+        aws-region: us-east-2
     
     - name: Deploy to ECS
       env:
