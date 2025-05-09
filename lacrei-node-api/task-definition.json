@@ -1,0 +1,23 @@
+
+{
+    "family": "lacrei-task",
+    "networkMode": "awsvpc",
+    "executionRoleArn": "arn:aws:iam::272544213398:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::272544213398:role/ecsTaskRole",
+    "containerDefinitions": [
+      {
+        "name": "lacrei-container",
+        "image": "272544213398.dkr.ecr.us-east-2.amazonaws.com/lacrei-node-api:latest",
+        "essential": true,
+        "portMappings": [
+          {
+            "containerPort": 3000,
+            "protocol": "tcp"
+          }
+        ]
+      }
+    ],
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "512",
+    "memory": "1024"
+  }
