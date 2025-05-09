@@ -29,45 +29,45 @@ jobs:
       run: npm test
 
   security-scan:
-   needs: build-and-test
-   runs-on: ubuntu-latest
-   steps:
-   - uses: actions/checkout@v3
-   
-   - name: Build Docker image
-     run: docker build -t ${{ env.CONTAINER_NAME }} .
-   
-   - name: Start API in background
-     run: |
-       docker run -d \
-         -p 3000:3000 \
-         --name ${{ env.CONTAINER_NAME }}-scan \
-         ${{ env.CONTAINER_NAME }}
-       sleep 15  # Aumentei o tempo para garantir que a API subiu
-       docker ps -a
-       docker logs ${{ env.CONTAINER_NAME }}-scan
-       curl -v http://localhost:3000/status || true
-   
-   - name: Run OWASP ZAP Scan
-     uses: zaproxy/action-full-scan@v0.6.0
-     with:
-       target: 'http://localhost:3000'
-       docker_name: 'owasp/zap2docker-stable'
-       cmd_options: '-a -j -t http://localhost:3000'
-       fail_action: false  # Não falhar o job, apenas gerar relatório
-   
-   - name: Stop and remove container
-     if: always()
-     run: |
-       docker stop ${{ env.CONTAINER_NAME }}-scan || true
-       docker rm ${{ env.CONTAINER_NAME }}-scan || true
-   
-   - name: Upload ZAP Report
-     if: always()
-     uses: actions/upload-artifact@v3
-     with:
-       name: zap-scan-report
-       path: zap-report.html
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Atualizado para v4
+      
+      - name: Build Docker image
+        run: docker build -t ${{ env.CONTAINER_NAME }} .
+      
+      - name: Start API in background
+        run: |
+          docker run -d \
+            -p 3000:3000 \
+            --name ${{ env.CONTAINER_NAME }}-scan \
+            ${{ env.CONTAINER_NAME }}
+          sleep 20  # Tempo aumentado para garantir inicialização
+          docker ps -a
+          curl -v http://localhost:3000/status || true
+      
+      - name: Run OWASP ZAP Scan
+        uses: zaproxy/action-full-scan@v1.0.0  # Versão mais recente
+        with:
+          target: 'http://localhost:3000'
+          docker_name: 'owasp/zap2docker-stable'
+          cmd_options: '-a -j -t http://localhost:3000'
+          fail_action: false
+      
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker stop ${{ env.CONTAINER_NAME }}-scan || true
+          docker rm ${{ env.CONTAINER_NAME }}-scan || true
+      
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4  # Atualizado para v4
+        with:
+          name: zap-scan-report
+          path: zap-report.html
+          retention-days: 5
 
   build-and-push-ecr:
     needs: security-scan
