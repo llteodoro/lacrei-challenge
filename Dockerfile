@@ -12,6 +12,7 @@ FROM node:18-alpine
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
+RUN chown -R node:node /app
 EXPOSE 3000
 USER node
 
